@@ -6,7 +6,7 @@ socket.on('connect', function() {
 
 socket.on('download_progress', function(data) {
     console.log('Download progress event received', data);
-    const percent = data.percent.trim();
+    const percent = cleanProgressString(data.percent.trim());
     const progress = parseFloat(percent.replace('%', ''));
     $('#progress-bar').css('width', progress + '%').attr('aria-valuenow', progress);
     $('#progress-bar').text(percent);
@@ -40,4 +40,9 @@ function showDownloadFinishedPopup(message) {
             });
         }
     });
+}
+
+function cleanProgressString(progressString) {
+    // Remove ANSI escape codes and other unwanted characters
+    return progressString.replace(/\x1b\[[0-9;]*m/g, '');
 }
