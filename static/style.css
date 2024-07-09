@@ -23,32 +23,17 @@ h1 {
     margin-bottom: 20px;
 }
 
-.form-group {
-    margin-bottom: 15px;
+.progress {
+    height: 30px;
+    margin-bottom: 10px;
 }
 
-label {
-    display: block;
-    margin-bottom: 5px;
+.progress-bar {
+    background-color: #28a745;
+    transition: width 0.4s;
+}
+
+#progress-percent {
+    font-size: 18px;
     font-weight: bold;
-}
-
-input[type="text"] {
-    width: 100%;
-    padding: 8px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-}
-
-button {
-    background-color: #007bff;
-    color: #fff;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 4px;
-    cursor: pointer;
-}
-
-button:hover {
-    background-color: #0056b3;
 }
