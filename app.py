@@ -1,41 +1,21 @@
-from flask import Flask, request, render_template, redirect, url_for
+from flask import Flask, request, render_template, redirect, url_for, send_from_directory
 import os
 from yt_dlp import YoutubeDL
 from pathlib import Path
 
 app = Flask(__name__)
 
-def get_download_path():
-    if os.name == 'nt':  # Windows
-        return str(Path.home() / "Downloads")
-    else:  # MacOS e Linux
-        return str(Path.home() / "Downloads")
-
-def get_best_format(video_url):
-    ydl_opts = {'listformats': True}
-    with YoutubeDL(ydl_opts) as ydl:
-        info = ydl.extract_info(video_url, download=False)
-        formats = info.get('formats', [info])
-        # Filtra apenas os formatos com extensão mp4
-        mp4_formats = [f for f in formats if f.get('ext') == 'mp4']
-        if not mp4_formats:
-            return None  # Nenhum formato mp4 disponível
-        return mp4_formats[-1]['format_id']  # Seleciona o melhor formato mp4 disponível
-
 @app.route('/', methods=['GET', 'POST'])
 def index():
-    print("Index page accessed")
     if request.method == 'POST':
-        print("POST request received")
         video_url = request.form['url']
-        download_path = get_download_path()
-        best_format = get_best_format(video_url)
-        if best_format is None:
-            return "Erro: Nenhum formato mp4 disponível para o vídeo."
+        download_path = request.form['download_path']
+        if not download_path:
+            download_path = get_default_download_path()
+        
         ydl_opts = {
             'outtmpl': os.path.join(download_path, '%(title)s.%(ext)s'),
-            'format': best_format,
-            'cookiefile': 'cookies.txt'  # Adicione o caminho para o arquivo de cookies
+            'format': 'best'
         }
         try:
             with YoutubeDL(ydl_opts) as ydl:
@@ -48,9 +28,25 @@ def index():
 
 @app.route('/success')
 def success():
-    print("Success page accessed")
-    return 'Download Concluído! O vídeo foi salvo no diretório de Downloads.'
+    return 'Download Concluído! O vídeo foi salvo no diretório especificado.'
+
+@app.route('/select_directory', methods=['GET'])
+def select_directory():
+    root_path = Path.home()
+    directories = [d for d in root_path.iterdir() if d.is_dir()]
+    return render_template('select_directory.html', directories=directories, current_path=root_path)
+
+@app.route('/navigate_directory', methods=['POST'])
+def navigate_directory():
+    selected_directory = request.form['selected_directory']
+    directories = [d for d in Path(selected_directory).iterdir() if d.is_dir()]
+    return render_template('select_directory.html', directories=directories, current_path=selected_directory)
+
+def get_default_download_path():
+    if os.name == 'nt':  # Windows
+        return str(Path.home() / "Downloads")
+    else:  # MacOS e Linux
+        return str(Path.home() / "Downloads")
 
 if __name__ == '__main__':
-    print("Starting Flask app")
     app.run(debug=True)

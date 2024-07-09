@@ -4,13 +4,25 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Baixar Vídeos do YouTube</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body>
-    <h1>Baixar Vídeos do YouTube</h1>
-    <form method="POST">
-        <label for="url">URL do Vídeo:</label>
-        <input type="text" id="url" name="url" required>
-        <button type="submit">Baixar</button>
-    </form>
+    <div class="container">
+        <h1 class="mt-5">Baixar Vídeos do YouTube</h1>
+        <form method="POST" enctype="multipart/form-data">
+            <div class="form-group">
+                <label for="url">URL do Vídeo:</label>
+                <input type="text" id="url" name="url" class="form-control" required>
+            </div>
+            <div class="form-group">
+                
+                <button type="button" class="btn btn-secondary mt-2" onclick="openFileDialog()">Selecionar Diretório</button>
+                <input type="file" id="fileDialog" webkitdirectory directory multiple style="display: none;" onchange="setDirectoryPath()">
+            </div>
+            <button type="submit" class="btn btn-primary">Baixar</button>
+        </form>
+    </div>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>

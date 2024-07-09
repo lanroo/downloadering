@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Selecionar Diretório</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Selecionar Diretório</h1>
+        <form method="POST" action="{{ url_for('navigate_directory') }}">
+            <input type="hidden" name="selected_directory" value="{{ current_path }}">
+            <div class="form-group">
+                <label for="directories">Diretórios:</label>
+                <select name="selected_directory" id="directories" size="10">
+                    {% for directory in directories %}
+                        <option value="{{ directory }}">{{ directory }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit">Navegar</button>
+        </form>
+    </div>
+</body>
+</html>
