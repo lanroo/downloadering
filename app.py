@@ -1,4 +1,4 @@
-from flask import Flask, request, render_template, redirect, url_for
+from flask import Flask, request, render_template, redirect, url_for, send_file
 from flask_socketio import SocketIO, emit
 import os
 from yt_dlp import YoutubeDL
@@ -9,6 +9,11 @@ import re
 
 app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins="*")
+
+# Diretório fixo para armazenar arquivos baixados
+DOWNLOAD_FOLDER = 'downloads'
+if not os.path.exists(DOWNLOAD_FOLDER):
+    os.makedirs(DOWNLOAD_FOLDER)
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -26,43 +31,47 @@ def progress():
     return render_template('progress.html')
 
 def download_video(video_url):
-    download_path = get_default_download_path()
     now = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+    download_path = os.path.join(DOWNLOAD_FOLDER, f'{now}')
+    if not os.path.exists(download_path):
+        os.makedirs(download_path)
+
     ydl_opts = {
         'outtmpl': os.path.join(download_path, f'%(title)s_{now}.%(ext)s'),
-        'format': 'bestvideo[ext=mp4]/best',  # Ajuste para formato simples
-        'progress_hooks': [progress_hook]
+        'format': 'bestvideo[ext=mp4]/best',
+        'progress_hooks': [progress_hook],
+        'verbose': True
     }
     try:
         with YoutubeDL(ydl_opts) as ydl:
             ydl.download([video_url])
+        for file in os.listdir(download_path):
+            file_path = os.path.join(download_path, file)
+            # Emitir apenas o nome do arquivo relativo ao diretório de download
+            relative_file_path = os.path.relpath(file_path, DOWNLOAD_FOLDER)
+            socketio.emit('download_finished', {'file_path': relative_file_path}, namespace='/')
     except Exception as e:
         print(f"Error: {e}")
 
 def progress_hook(d):
     if d['status'] == 'downloading':
         percent = d['_percent_str']
-        percent_clean = re.sub(r'\x1b\[\d+;\d+m', '', percent)  # Remover códigos de controle
+        percent_clean = re.sub(r'\x1b\[\d+;\d+m', '', percent)
         speed = d['_speed_str']
         eta = d['_eta_str']
         print(f"Progress: {percent_clean} Speed: {speed} ETA: {eta}")
-        # Emitir evento de progresso
         socketio.emit('download_progress', {'percent': percent_clean, 'speed': speed, 'eta': eta}, namespace='/')
     elif d['status'] == 'finished':
         print("Download finished")
-        socketio.emit('download_finished', {'message': 'Download Concluído!'}, namespace='/')
 
-@app.route('/success')
-def success():
-    print("Success page accessed")
-    return 'Download Concluído! O vídeo foi salvo na pasta de downloads.'
-
-def get_default_download_path():
-    if os.name == 'nt':  # Windows
-        return str(Path.home() / "Downloads")
-    else:  # MacOS e Linux
-        return str(Path.home() / "Downloads")
+@app.route('/download/<path:filename>', methods=['GET'])
+def download(filename):
+    file_path = os.path.join(DOWNLOAD_FOLDER, filename)
+    if os.path.exists(file_path):
+        return send_file(file_path, as_attachment=True)
+    else:
+        return "Arquivo não encontrado", 404
 
 if __name__ == '__main__':
     print("Starting Flask app")
-    socketio.run(app, debug=True)
+    socketio.run(app, debug=True, port=8000)

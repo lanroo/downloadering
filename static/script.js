@@ -46,3 +46,19 @@ function cleanProgressString(progressString) {
     // Remove ANSI escape codes and other unwanted characters
     return progressString.replace(/\x1b\[[0-9;]*m/g, '');
 }
+
+document.addEventListener('DOMContentLoaded', function () {
+    const socket = io();
+
+    socket.on('download_progress', function (data) {
+        const progressBar = document.getElementById('progress-bar');
+        progressBar.style.width = data.percent;
+        progressBar.setAttribute('aria-valuenow', parseInt(data.percent));
+        progressBar.textContent = `${data.percent} (${data.speed}) ETA: ${data.eta}`;
+    });
+
+    socket.on('download_finished', function (data) {
+        const filePath = encodeURIComponent(data.file_path);
+        window.location.href = `/download/${filePath}`;
+    });
+});
