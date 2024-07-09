@@ -1,12 +1,43 @@
-function openFileDialog() {
-    document.getElementById('fileDialog').click();
-}
+const socket = io();
 
-function setDirectoryPath() {
-    const fileInput = document.getElementById('fileDialog');
-    if (fileInput.files.length > 0) {
-        const filePath = fileInput.files[0].webkitRelativePath;
-        const directoryPath = filePath.substring(0, filePath.indexOf('/'));
-        document.getElementById('download_path').value = directoryPath;
-    }
+socket.on('connect', function() {
+    console.log('Connected to server');
+});
+
+socket.on('download_progress', function(data) {
+    console.log('Download progress event received', data);
+    const percent = data.percent.trim();
+    const progress = parseFloat(percent.replace('%', ''));
+    $('#progress-bar').css('width', progress + '%').attr('aria-valuenow', progress);
+    $('#progress-bar').text(percent);
+    $('#progress-percent').text(percent);
+});
+
+socket.on('download_finished', function(data) {
+    console.log('Download finished event received', data);
+    showDownloadFinishedPopup(data.message);
+});
+
+function showDownloadFinishedPopup(message) {
+    console.log('Showing SweetAlert2 popup');
+    Swal.fire({
+        title: "Download Concluído!",
+        text: "Seu download foi feito e seu arquivo foi salvo na pasta de Download do seu computador. Deseja baixar outro arquivo?",
+        icon: "success",
+        showCancelButton: true,
+        confirmButtonColor: "#3085d6",
+        cancelButtonColor: "#d33",
+        cancelButtonText: "Não",
+        confirmButtonText: "Sim"
+    }).then((result) => {
+        if (result.isConfirmed) {
+            window.location.href = '/'; // Volta para a página inicial
+        } else {
+            Swal.fire({
+                title: "Obrigada!",
+                text: "",
+                icon: "success"
+            });
+        }
+    });
 }
