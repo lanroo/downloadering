@@ -2,7 +2,6 @@ from flask import Flask, request, render_template, redirect, url_for, send_file
 from flask_socketio import SocketIO, emit
 import os
 from yt_dlp import YoutubeDL
-from pathlib import Path
 from datetime import datetime
 import threading
 import re
