@@ -5,14 +5,15 @@ from yt_dlp import YoutubeDL
 from datetime import datetime
 import threading
 import re
+import tempfile
 
 app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins="*")
 
-# Diretório fixo para armazenar arquivos baixados
-DOWNLOAD_FOLDER = 'downloads'
-if not os.path.exists(DOWNLOAD_FOLDER):
-    os.makedirs(DOWNLOAD_FOLDER)
+# Diretório temporário para armazenar arquivos baixados
+tmpdir = tempfile.TemporaryDirectory()
+DOWNLOAD_FOLDER = os.path.join(tmpdir.name, 'downloads')
+os.makedirs(DOWNLOAD_FOLDER, exist_ok=True)
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -42,14 +43,12 @@ class MyLogger:
 def download_video(video_url):
     now = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
     download_path = os.path.join(DOWNLOAD_FOLDER, f'{now}')
-    if not os.path.exists(download_path):
-        os.makedirs(download_path)
+    os.makedirs(download_path, exist_ok=True)
 
     ydl_opts = {
         'outtmpl': os.path.join(download_path, f'%(title)s_{now}.%(ext)s'),
         'format': 'bestvideo[ext=mp4]/best',
         'progress_hooks': [progress_hook],
-        'verbose': True,
         'logger': MyLogger()
     }
     try:
@@ -74,7 +73,7 @@ def progress_hook(d):
         print("Download finished")
 
 @app.route('/download/<path:filename>', methods=['GET'])
-def download(filename):
+def download_file(filename):
     file_path = os.path.join(DOWNLOAD_FOLDER, filename)
     if os.path.exists(file_path):
         return send_file(file_path, as_attachment=True)
