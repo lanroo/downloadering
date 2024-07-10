@@ -6,9 +6,12 @@ from datetime import datetime
 import threading
 import re
 import tempfile
+import eventlet
+
+eventlet.monkey_patch()
 
 app = Flask(__name__)
-socketio = SocketIO(app, cors_allowed_origins="*")
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
 
 # Diretório temporário para armazenar arquivos baixados
 tmpdir = tempfile.TemporaryDirectory()
@@ -17,9 +20,7 @@ os.makedirs(DOWNLOAD_FOLDER, exist_ok=True)
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
-    print("Index page accessed")
     if request.method == 'POST':
-        print("POST request received")
         video_url = request.form['url']
         download_thread = threading.Thread(target=download_video, args=(video_url,))
         download_thread.start()
@@ -67,7 +68,6 @@ def progress_hook(d):
         percent_clean = re.sub(r'\x1b\[[0-9;]*[a-zA-Z]', '', percent)
         speed = d['_speed_str']
         eta = d['_eta_str']
-        print(f"Progress: {percent_clean} Speed: {speed} ETA: {eta}")
         socketio.emit('download_progress', {'percent': percent_clean, 'speed': speed, 'eta': eta}, namespace='/')
     elif d['status'] == 'finished':
         print("Download finished")
@@ -81,5 +81,4 @@ def download_file(filename):
         return "Arquivo não encontrado", 404
 
 if __name__ == '__main__':
-    print("Starting Flask app")
-    socketio.run(app, debug=True, port=5000)
+    socketio.run(app, host='0.0.0.0', port=5000)
