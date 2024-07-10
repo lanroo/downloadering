@@ -1,11 +1,6 @@
-# Ignorar a pasta venv (ambiente virtual)
+# Ignorar arquivos
 venv/
-
-# Ignorar a pasta downloads
 downloads/
-
-# Ignorar cookies.txt
 cookies.txt
-
-# Ignorar requirements.txt
 requirements.txt
+downloadering.git/
