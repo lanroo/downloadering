@@ -6,45 +6,37 @@ socket.on('connect', function() {
 
 socket.on('download_progress', function(data) {
     console.log('Download progress event received', data);
-    const percent = cleanProgressString(data.percent.trim());
-    const progress = parseFloat(percent.replace('%', ''));
+    const cleanedPercent = cleanProgressString(data.percent.trim());
+    const progress = parseFloat(cleanedPercent.replace('%', ''));
     $('#progress-bar').css('width', progress + '%').attr('aria-valuenow', progress);
-    $('#progress-bar').text(percent);
-    $('#progress-percent').text(percent);
+    $('#progress-bar').text(progress + '%'); // Exibir apenas a porcentagem limpa na barra
+    $('#progress-percent').text(cleanedPercent);
 });
 
 socket.on('download_finished', function(data) {
     console.log('Download finished event received', data);
-    showDownloadFinishedPopup(data.message);
+    const filePath = encodeURIComponent(data.file_path);
+    window.location.href = `/download/${filePath}`;
+    // Mostrar popup de agradecimento após um breve atraso para garantir que o download seja iniciado
+    setTimeout(() => {
+        Swal.fire({
+            title: 'Obrigado!',
+            text: 'Deseja baixar mais algum arquivo?',
+            icon: 'success',
+            showCancelButton: true,
+            confirmButtonText: 'Sim',
+            cancelButtonText: 'Não'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                window.location.href = '/'; // Volta para a página inicial
+            }
+        });
+    }, 3000); // 3 segundos de atraso
 });
-
-function showDownloadFinishedPopup(message) {
-    console.log('Showing SweetAlert2 popup');
-    Swal.fire({
-        title: "Download Concluído!",
-        text: "Seu download foi feito e seu arquivo foi salvo na pasta de Download do seu computador. Deseja baixar outro arquivo?",
-        icon: "success",
-        showCancelButton: true,
-        confirmButtonColor: "#3085d6",
-        cancelButtonColor: "#d33",
-        cancelButtonText: "Não",
-        confirmButtonText: "Sim"
-    }).then((result) => {
-        if (result.isConfirmed) {
-            window.location.href = '/'; // Volta para a página inicial
-        } else {
-            Swal.fire({
-                title: "Obrigada!",
-                text: "",
-                icon: "success"
-            });
-        }
-    });
-}
 
 function cleanProgressString(progressString) {
     // Remove ANSI escape codes and other unwanted characters
-    return progressString.replace(/\x1b\[[0-9;]*m/g, '');
+    return progressString.replace(/\x1b\[([0-9;]*)m/g, '').replace(/[^\x20-\x7E]/g, '');
 }
 
 document.addEventListener('DOMContentLoaded', function () {
@@ -52,13 +44,31 @@ document.addEventListener('DOMContentLoaded', function () {
 
     socket.on('download_progress', function (data) {
         const progressBar = document.getElementById('progress-bar');
-        progressBar.style.width = data.percent;
-        progressBar.setAttribute('aria-valuenow', parseInt(data.percent));
-        progressBar.textContent = `${data.percent} (${data.speed}) ETA: ${data.eta}`;
+        const cleanedPercent = cleanProgressString(data.percent.trim());
+        const progress = parseFloat(cleanedPercent.replace('%', ''));
+        progressBar.style.width = progress + '%';
+        progressBar.setAttribute('aria-valuenow', progress);
+        progressBar.textContent = progress + '%';
+        document.getElementById('progress-percent').textContent = cleanedPercent;
     });
 
     socket.on('download_finished', function (data) {
         const filePath = encodeURIComponent(data.file_path);
         window.location.href = `/download/${filePath}`;
+        // Mostrar popup de agradecimento após um breve atraso para garantir que o download seja iniciado
+        setTimeout(() => {
+            Swal.fire({
+                title: 'Obrigado!',
+                text: 'Deseja baixar mais algum arquivo?',
+                icon: 'success',
+                showCancelButton: true,
+                confirmButtonText: 'Sim',
+                cancelButtonText: 'Não'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = '/'; // Volta para a página inicial
+                }
+            });
+        }, 3000); // 3 segundos de atraso
     });
 });

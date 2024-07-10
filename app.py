@@ -30,6 +30,16 @@ def index():
 def progress():
     return render_template('progress.html')
 
+class MyLogger:
+    def debug(self, msg):
+        print(msg)
+
+    def warning(self, msg):
+        print(msg)
+
+    def error(self, msg):
+        print(msg)
+
 def download_video(video_url):
     now = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
     download_path = os.path.join(DOWNLOAD_FOLDER, f'{now}')
@@ -40,14 +50,14 @@ def download_video(video_url):
         'outtmpl': os.path.join(download_path, f'%(title)s_{now}.%(ext)s'),
         'format': 'bestvideo[ext=mp4]/best',
         'progress_hooks': [progress_hook],
-        'verbose': True
+        'verbose': True,
+        'logger': MyLogger()
     }
     try:
         with YoutubeDL(ydl_opts) as ydl:
             ydl.download([video_url])
         for file in os.listdir(download_path):
             file_path = os.path.join(download_path, file)
-            # Emitir apenas o nome do arquivo relativo ao diretório de download
             relative_file_path = os.path.relpath(file_path, DOWNLOAD_FOLDER)
             socketio.emit('download_finished', {'file_path': relative_file_path}, namespace='/')
     except Exception as e:
@@ -56,7 +66,7 @@ def download_video(video_url):
 def progress_hook(d):
     if d['status'] == 'downloading':
         percent = d['_percent_str']
-        percent_clean = re.sub(r'\x1b\[\d+;\d+m', '', percent)
+        percent_clean = re.sub(r'\x1b\[[0-9;]*[a-zA-Z]', '', percent)
         speed = d['_speed_str']
         eta = d['_eta_str']
         print(f"Progress: {percent_clean} Speed: {speed} ETA: {eta}")
@@ -74,4 +84,4 @@ def download(filename):
 
 if __name__ == '__main__':
     print("Starting Flask app")
-    socketio.run(app, debug=True, port=8000)
+    socketio.run(app, debug=True, port=5000)
