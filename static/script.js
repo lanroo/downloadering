@@ -35,7 +35,7 @@ socket.on('download_finished', function(data) {
 });
 
 function cleanProgressString(progressString) {
-    // Remove ANSI escape codes and other unwanted characters
+    // Remove ANSI escape codes and outros caracteres indesejados
     return progressString.replace(/\x1b\[([0-9;]*)m/g, '').replace(/[^\x20-\x7E]/g, '');
 }
 
