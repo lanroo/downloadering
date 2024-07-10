@@ -1,0 +1,7 @@
+Flask==2.0.1
+Flask-SocketIO==5.0.1
+PyJWT==2.1.0
+yt-dlp==2021.12.25
+Werkzeug==2.0.1
+eventlet==0.31.0
+setuptools==57.0.0
