@@ -1,6 +1,8 @@
 # YouTube Video Downloader
 
-![Download Animation](https://media.giphy.com/media/3o6ZtpxSZbQRRnwCKQ/giphy.gif)
+<div align="center">
+  <img src="https://media.giphy.com/media/3o6ZtpxSZbQRRnwCKQ/giphy.gif" alt="Download Animation"/>
+</div>
 
 Este projeto é um aplicativo web simples que permite baixar vídeos do YouTube. Utilizando Python Flask no backend e tecnologias web modernas no frontend, ele fornece uma interface amigável para realizar o download de vídeos.
 
@@ -19,9 +21,12 @@ Este projeto é um aplicativo web simples que permite baixar vídeos do YouTube.
 - Bootstrap 4
 - SweetAlert2
 
+## Instalação
 
 1. **Clone o repositório:**
 
    ```bash
    git clone https://github.com/lanroo/downloadering.git
    cd downloadering
+
+Feito com ❤️ por Lanna
