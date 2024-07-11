@@ -2,6 +2,7 @@
 venv/
 downloads/
 cookies.txt
-requirements.txt
 downloadering.git/
 .vercel
+.aws/
+myenv/

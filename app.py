@@ -1,26 +1,32 @@
+import os
 from flask import Flask, request, render_template, redirect, url_for, send_file
 from flask_socketio import SocketIO, emit
-import os
+import threading
 from yt_dlp import YoutubeDL
 from datetime import datetime
-import threading
 import re
-import tempfile
-import eventlet
+import boto3
 
-eventlet.monkey_patch()
-
+# Configurações do Flask e SocketIO
 app = Flask(__name__)
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
+socketio = SocketIO(app, cors_allowed_origins="*")
 
-# Diretório temporário para armazenar arquivos baixados
-tmpdir = tempfile.TemporaryDirectory()
-DOWNLOAD_FOLDER = os.path.join(tmpdir.name, 'downloads')
-os.makedirs(DOWNLOAD_FOLDER, exist_ok=True)
+# Configuração do Amazon S3 usando as credenciais do arquivo `credentials`
+session = boto3.Session(profile_name='default')
+s3_client = session.client('s3')
+
+BUCKET_NAME = 'downloadflask' 
+
+# Diretório fixo para armazenar arquivos baixados
+DOWNLOAD_FOLDER = 'downloads'
+if not os.path.exists(DOWNLOAD_FOLDER):
+    os.makedirs(DOWNLOAD_FOLDER)
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
+    print("Index page accessed")
     if request.method == 'POST':
+        print("POST request received")
         video_url = request.form['url']
         download_thread = threading.Thread(target=download_video, args=(video_url,))
         download_thread.start()
@@ -44,12 +50,14 @@ class MyLogger:
 def download_video(video_url):
     now = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
     download_path = os.path.join(DOWNLOAD_FOLDER, f'{now}')
-    os.makedirs(download_path, exist_ok=True)
+    if not os.path.exists(download_path):
+        os.makedirs(download_path)
 
     ydl_opts = {
         'outtmpl': os.path.join(download_path, f'%(title)s_{now}.%(ext)s'),
         'format': 'bestvideo[ext=mp4]/best',
         'progress_hooks': [progress_hook],
+        'verbose': True,
         'logger': MyLogger()
     }
     try:
@@ -68,12 +76,13 @@ def progress_hook(d):
         percent_clean = re.sub(r'\x1b\[[0-9;]*[a-zA-Z]', '', percent)
         speed = d['_speed_str']
         eta = d['_eta_str']
+        print(f"Progress: {percent_clean} Speed: {speed} ETA: {eta}")
         socketio.emit('download_progress', {'percent': percent_clean, 'speed': speed, 'eta': eta}, namespace='/')
     elif d['status'] == 'finished':
         print("Download finished")
 
 @app.route('/download/<path:filename>', methods=['GET'])
-def download_file(filename):
+def download(filename):
     file_path = os.path.join(DOWNLOAD_FOLDER, filename)
     if os.path.exists(file_path):
         return send_file(file_path, as_attachment=True)
@@ -81,4 +90,5 @@ def download_file(filename):
         return "Arquivo não encontrado", 404
 
 if __name__ == '__main__':
-    socketio.run(app, host='0.0.0.0', port=5000)
+    print("Starting Flask app")
+    socketio.run(app, debug=True, port=5000)
